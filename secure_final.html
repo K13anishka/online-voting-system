@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Online Voting System</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to bottom right, #e3f2fd, #fff);
+      margin: 0;
+      padding: 20px;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    header img {
+      width: 80px;
+    }
+    header h1 {
+      margin: 10px 0 0 0;
+      font-size: 24px;
+      color: #1a237e;
+    }
+    .container {
+      max-width: 500px;
+      background: white;
+      margin: auto;
+      padding: 30px;
+      border: 2px solid #1a237e;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    .hidden { display: none; }
+    input, button, textarea, select {
+      width: 100%;
+      margin-top: 10px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    button {
+      background-color: #1a237e;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #3949ab;
+    }
+    h2 {
+      text-align: center;
+      color: #1a237e;
+    }
+    textarea {
+      resize: vertical;
+    }
+    #results p {
+      background-color: #f1f8e9;
+      border-left: 5px solid #558b2f;
+      padding: 10px;
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="https://cdn-icons-png.flaticon.com/512/3064/3064197.png" alt="Security Icon">
+    <h1>Secure Classroom Voting System</h1>
+  </header>
+
+  <div class="container" id="mainLogin">
+    <h2>Login</h2>
+    <select id="userType">
+      <option value="voter">Voter</option>
+      <option value="admin">Admin</option>
+    </select>
+    <input type="text" id="username" placeholder="Username" required>
+    <input type="password" id="password" placeholder="Password" required>
+    <button onclick="login()">Login</button>
+    <p id="loginStatus"></p>
+  </div>
+
+  <div class="container hidden" id="voterPage">
+    <h2>Vote</h2>
+    <p id="voterWelcome"></p>
+    <div id="votingQuestion"></div>
+    <button onclick="castVote()">Submit Vote</button>
+    <p id="voteStatus"></p>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <div class="container hidden" id="adminPage">
+    <h2>Admin Dashboard</h2>
+    <textarea id="newQuestion" placeholder="Enter question and options (format: Question|Option1|Option2|...)"></textarea>
+    <button onclick="createVote()">Create Vote</button>
+    <button onclick="viewResults()">View Results</button>
+    <div id="results"></div>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <script>
+    const users = {
+      voter1: { password: 'voter123', role: 'voter', hasVoted: false },
+      voter2: { password: 'voter456', role: 'voter', hasVoted: false },
+      voter3: { password: 'voter789', role: 'voter', hasVoted: false },
+      admin: { password: 'admin123', role: 'admin' }
+    };
+
+    let currentUser = null;
+    let voteData = null;
+
+    function login() {
+      const userType = document.getElementById('userType').value;
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      if (users[username] && users[username].password === password && users[username].role === userType) {
+        currentUser = username;
+        document.getElementById('loginStatus').textContent = '';
+        document.getElementById('mainLogin').classList.add('hidden');
+        if (userType === 'voter') {
+          document.getElementById('voterPage').classList.remove('hidden');
+          document.getElementById('voterWelcome').textContent = `Welcome, ${username}`;
+          showQuestion();
+        } else {
+          document.getElementById('adminPage').classList.remove('hidden');
+        }
+      } else {
+        document.getElementById('loginStatus').textContent = 'Invalid credentials.';
+      }
+    }
+
+    function logout() {
+      currentUser = null;
+      document.getElementById('mainLogin').classList.remove('hidden');
+      document.getElementById('voterPage').classList.add('hidden');
+      document.getElementById('adminPage').classList.add('hidden');
+    }
+
+    function createVote() {
+      const input = document.getElementById('newQuestion').value;
+      const parts = input.split('|');
+      if (parts.length < 3) {
+        alert('Invalid format. Use: Question|Option1|Option2|...');
+        return;
+      }
+      voteData = {
+        question: parts[0],
+        options: parts.slice(1),
+        votes: Array(parts.length - 1).fill(0),
+        voters: []
+      };
+      Object.keys(users).forEach(user => {
+        if (users[user].role === 'voter') {
+          users[user].hasVoted = false;
+        }
+      });
+      alert('Vote question created.');
+    }
+
+    function showQuestion() {
+      if (!voteData) {
+        document.getElementById('votingQuestion').innerHTML = '<p>No active question.</p>';
+        return;
+      }
+      if (users[currentUser].hasVoted) {
+        document.getElementById('votingQuestion').innerHTML = '<p>You have already voted.</p>';
+        return;
+      }
+      let html = `<p>${voteData.question}</p>`;
+      voteData.options.forEach((opt, index) => {
+        html += `<label><input type="radio" name="voteOption" value="${index}"> ${opt}</label><br>`;
+      });
+      document.getElementById('votingQuestion').innerHTML = html;
+    }
+
+    function castVote() {
+      if (!voteData || users[currentUser].hasVoted) {
+        document.getElementById('voteStatus').textContent = 'You have already voted or no question is active.';
+        return;
+      }
+      const choice = document.querySelector('input[name="voteOption"]:checked');
+      if (!choice) {
+        document.getElementById('voteStatus').textContent = 'Please select an option.';
+        return;
+      }
+      const index = parseInt(choice.value);
+      voteData.votes[index]++;
+      voteData.voters.push(currentUser);
+      users[currentUser].hasVoted = true;
+      document.getElementById('voteStatus').textContent = 'Vote submitted successfully!';
+      document.getElementById('votingQuestion').innerHTML = '<p>Thank you for voting.</p>';
+    }
+
+    function viewResults() {
+      if (!voteData) {
+        document.getElementById('results').innerHTML = '<p>No votes yet.</p>';
+        return;
+      }
+      let resultHTML = `<p><strong>${voteData.question}</strong></p>`;
+      voteData.options.forEach((opt, idx) => {
+        resultHTML += `<p>${opt}: ${voteData.votes[idx]} votes</p>`;
+      });
+      resultHTML += `<p>Total Votes: ${voteData.voters.length}</p>`;
+      document.getElementById('results').innerHTML = resultHTML;
+    }
+  </script>
+</body>
+</html>
