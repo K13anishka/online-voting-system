@@ -1,0 +1,19 @@
+{
+  "name": "cryptopay-wallet",
+  "version": "1.0.0",
+  "description": "A crypto wallet app similar to PhonePe for cryptocurrency transactions",
+  "main": "server/index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm start",
+    "build": "cd client && npm run build",
+    "install-deps": "npm install && cd server && npm install && cd ../client && npm install"
+  },
+  "keywords": ["crypto", "wallet", "blockchain", "web3", "cryptocurrency"],
+  "author": "CryptoPay Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^7.6.0"
+  }
+}
